@@ -34,9 +34,29 @@ download_files() {
     done
 }
 
+rotate_bmps() {
+    local dir="${1:-/userdata/system/patches/bootlogo}"
+
+    local board=$(batocera-info | grep '^Board: ' | sed -e 's/^Board: //' | tr '[:upper:]' '[:lower:]')
+
+    if [[ "$board" == "rg28xx" ]]; then
+        # Rotate each .bmp file in the directory by 270 degrees
+        echo "Rotate Images by 270 degrees..."
+        for file in "$dir"/*.bmp; do
+            if [ -f "$file" ]; then
+                echo -n "    Rotating $file..."
+                ffmpeg -i "$file" -vf "transpose=2,transpose=2,transpose=2" "$file.rotated.bmp"
+                mv "$file.rotated.bmp" "$file"
+                echo " Complete" && \
+            fi
+        done
+    fi
+}
 # Download generate scripts and set permissions
 echo "Downloading Script and Bootlogos..."
 download_files "$download_data" && \
+echo -n "Downloading Script and Bootlogos..."
+rotate_bmps && \
 echo -n "Making changes permanent..." && \
 batocera-save-overlay >/dev/null && \
 echo " Complete" && \
