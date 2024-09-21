@@ -26,6 +26,10 @@ download_files() {
             $uri \
             --output $target_file \
         || return 1
+
+        if [ "$executable" = "true" ]; then
+            chmod +x $target_file
+        fi
         echo " Complete"
     done
 }
