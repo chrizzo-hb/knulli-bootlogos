@@ -4,14 +4,10 @@ This is a utility you can use to update your Knulli boot logo's
 
 ## Installation
 
-1. Copy files into your `/userdata` share.
-2. Login to the server using ssh and make the `change_bootlogo.sh` file executable.
+Log into the device via ssh and execute the following command:
+
 ```bash
-chmod +x /userdata/custom_scripts/change_bootlogo.sh
-```
-3. Execute the scipt and follow the prompts.
-```bash
-/userdata/custom_scripts/change_bootlogo.sh
+curl -sL https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/install.sh | bash
 ```
 
 
