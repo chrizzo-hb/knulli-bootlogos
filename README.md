@@ -10,7 +10,6 @@ Log into the device via ssh and execute the following command:
 curl -sL https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/install.sh | bash
 ```
 
-
 ## Credit
 
 This contains some bootlogo images not created by me.  Some of the images were modified by me but
