@@ -47,7 +47,7 @@ rotate_bmps() {
                 echo -n "    Rotating $file..."
                 ffmpeg -i "$file" -vf "transpose=2,transpose=2,transpose=2" "$file.rotated.bmp"
                 mv "$file.rotated.bmp" "$file"
-                echo " Complete" && \
+                echo " Complete"
             fi
         done
     fi
