@@ -34,26 +34,13 @@ confirm_reboot() {
 make_boot_logo() {
     local file="$1"
     if [ -f "$file" ]; then
-        # Get boot partition        
-        local boot_partition="$(findmnt -n -o SOURCE /boot)"
+        # Set boot partition to RW
+        [[ ! -w /boot/bootlogo.bmp ]] && batocera-es-swissknife --remount
 
-        # Change boot partition to read/write
-        mount -o rw,remount "$boot_partition"
+        # Copy new bootlogo
+        cp "$file" /boot/bootlogo.bmp
 
-        # Create temporary mount point and ensure it was created successfully
-        local temp_mount_point=$(mktemp -d /tmp/mountpoint-XXXXXX)
-        if [ ! -d "$temp_mount_point" ]; then
-            echo >&2 "ERROR: Failed to create a temporary directory."
-            exit 1
-        fi
-
-        # Mount the boot partition and copy the file then unmount
-        mount -o rw "$boot_partition" "$temp_mount_point"
-        cp "$file" "$temp_mount_point"/bootlogo.bmp
-        umount "$temp_mount_point"
-
-        # Restore boot partition back to read only
-        mount -o ro,remount "$boot_partition"
+        batocera-es-swissknife --remount
 
         # After setting the boot logo, ask if the user wants to reboot
         confirm_reboot
