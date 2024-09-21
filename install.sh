@@ -17,7 +17,7 @@ download_files() {
         if [ -z "$uri" ]; then
             continue
         fi
-        
+
         mkdir -p "$(dirname "$target_file")"
 
         echo -n "    Downloading $(basename "$target_file")..."
@@ -44,18 +44,18 @@ rotate_bmps() {
         echo "Rotate Images by 270 degrees..."
         for file in "$dir"/*.bmp; do
             if [ -f "$file" ]; then
-                echo -n "    Rotating $file..."
-                ffmpeg -i "$file" -vf "transpose=2,transpose=2,transpose=2" "$file.rotated.bmp"
+                echo -n "    Rotating $(basename "$file")..."
+                ffmpeg -y -v 0 -i "$file" -vf "rotate=PI*1.5:ow=ih:oh=iw" "$file.rotated.bmp"
                 mv "$file.rotated.bmp" "$file"
                 echo " Complete"
             fi
         done
     fi
 }
+
 # Download generate scripts and set permissions
 echo "Downloading Script and Bootlogos..."
 download_files "$download_data" && \
-echo -n "Downloading Script and Bootlogos..."
 rotate_bmps && \
 echo -n "Making changes permanent..." && \
 batocera-save-overlay >/dev/null && \
