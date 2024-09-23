@@ -50,7 +50,7 @@ make_boot_logo() {
 }
 
 select_file_dialog() {
-    DIRECTORY=${1:-/userdata/system/patches/bootlogo}
+    DIRECTORY=${1:-/userdata/roms/pygame/change-bootlogo/bootlogo}
 
     # Check if the provided argument is a valid directory
     if [ ! -d "$DIRECTORY" ]; then
@@ -92,7 +92,7 @@ select_file_dialog() {
 if [ ! -z "$1" ]; then
     logo_file="$1"
 else
-    logo_file="$(select_file_dialog /userdata/system/patches/bootlogo)"
+    logo_file="$(select_file_dialog /userdata/roms/pygame/change-bootlogo/bootlogo)"
 fi
 
 if [ -f "$logo_file" ]; then

@@ -2,14 +2,14 @@
 
 download_data="
 https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/change-bootlogo.sh /opt/change-bootlogo.sh true
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/info.txt /userdata/system/patches/bootlogo/info.txt false
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/bootlogo_original.bmp /userdata/system/patches/bootlogo/bootlogo_original.bmp false
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli_greyscale_v2.bmp /userdata/system/patches/bootlogo/powered_by_knulli_greyscale_v2.bmp false
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli_greyscale.bmp /userdata/system/patches/bootlogo/powered_by_knulli_greyscale.bmp false
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli_v2.bmp /userdata/system/patches/bootlogo/powered_by_knulli_v2.bmp false
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli.bmp /userdata/system/patches/bootlogo/powered_by_knulli.bmp false
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/rg35xx-h_anbernic.bmp /userdata/system/patches/bootlogo/rg35xx-h_anbernic.bmp false
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/rg35xx-h_device.bmp /userdata/system/patches/bootlogo/rg35xx-h_device.bmp false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/info.txt /userdata/roms/pygame/change-bootlogo/bootlogo/info.txt false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/bootlogo_original.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/bootlogo_original.bmp false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli_greyscale_v2.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/powered_by_knulli_greyscale_v2.bmp false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli_greyscale.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/powered_by_knulli_greyscale.bmp false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli_v2.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/powered_by_knulli_v2.bmp false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/powered_by_knulli.bmp false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/rg35xx-h_anbernic.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/rg35xx-h_anbernic.bmp false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/rg35xx-h_device.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/rg35xx-h_device.bmp false
 "
 download_files() {
     echo "$1" | while IFS=" " read -r uri target_file executable; do
@@ -35,7 +35,7 @@ download_files() {
 }
 
 rotate_bmps() {
-    local dir="${1:-/userdata/system/patches/bootlogo}"
+    local dir="${1:-/userdata/roms/pygame/change-bootlogo/bootlogo}"
 
     local board=$(batocera-info | grep '^Board: ' | sed -e 's/^Board: //' | tr '[:upper:]' '[:lower:]')
 

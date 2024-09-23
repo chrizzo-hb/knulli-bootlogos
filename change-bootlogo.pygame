@@ -1,0 +1,348 @@
+import os
+import pygame
+import sys
+import subprocess
+import logging
+
+LOG_LEVEL = 1 # 
+
+# Initialize logging
+logging.basicConfig(filename='/userdata/system/logs/change-bootlogo.log',
+                    level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Initialize Pygame
+pygame.init()
+
+# Try to get screen size; fallback to 640x480 if unavailable
+info = pygame.display.Info()
+width = info.current_w if info.current_w else 640
+height = info.current_h if info.current_h else 480
+
+# Set up display
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("File Selector")
+
+# Define colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+HIGHLIGHT_COLOR = (68, 138, 255)  # Light Blue for instruction text
+UNSELECTED_COLOR = (150, 150, 150)  # Grey for unselected list items and border
+
+# Font settings
+font = pygame.font.Font(None, 36)
+instruction_font = pygame.font.Font(None, 48)  # Larger font for instruction
+small_font = pygame.font.Font(None, 24)
+
+# Detect board type
+def detect_board():
+    try:
+        result = subprocess.run(
+            ["bash", "-c", "batocera-info | grep '^Board: ' | sed -e 's/^Board: //' | tr '[:upper:]' '[:lower:]'"],
+            capture_output=True, text=True, check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+
+        logging.debug(f"ERROR: Failed to detect board type: {e}")
+        return None
+
+# Function to rotate image (only for rg28xx)
+def rotate_image(file_path):
+    try:
+        rotated_file = f"{file_path}.rotated.bmp"
+        subprocess.run(['ffmpeg', '-y', '-v', '0', '-i', file_path,
+                        '-vf', 'rotate=PI*1.5:ow=ih:oh=iw', rotated_file], check=True)
+        os.replace(rotated_file, file_path)
+        #subprocess.run(['mv', rotated_file, file_path], check=True)
+
+        if LOG_LEVEL > 0: logging.debug(f"Image rotated and saved: {file_path}")
+    except subprocess.CalledProcessError as e:
+        logging.debug(f"ERROR: Failed to rotate image: {e}")
+
+# Function to copy and un-rotate boot logo for preview (for rg28xx)
+def prepare_unrotated_bootlogo(current_bootlogo_path):
+    bootlogo_path = '/boot/bootlogo.bmp'
+    try:
+        # Make an un-rotated copy in /tmp
+        subprocess.run(['ffmpeg', '-y', '-v', '0', '-i', bootlogo_path,
+                        '-vf', 'rotate=-PI*1.5:ow=ih:oh=iw', current_bootlogo_path], check=True)
+        if LOG_LEVEL > 0: logging.debug(f"Un-rotated bootlogo prepared in {current_bootlogo_path}")
+    except subprocess.CalledProcessError as e:
+        logging.debug(f"ERROR: Failed to prepare un-rotated bootlogo: {e}")
+
+# Function to get the directory
+def get_directory():
+    paths = ["./bootlogo", "/userdata/system/patches/bootlogo", "./"]
+    for path in paths:
+        if os.path.exists(path):
+            return path
+    return None
+
+# List and sort .bmp files in the specified directory
+def list_files(directory):
+    return sorted([f[:-4] for f in os.listdir(directory) if f.endswith('.bmp')])  # Remove '.bmp'
+
+# Function to wrap text
+def wrap_text(text, font, max_width):
+    words = text.split(' ')
+    lines = []
+    current_line = ''
+
+    for word in words:
+        test_line = f"{current_line} {word}".strip()
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = word
+
+    lines.append(current_line)
+    return lines
+
+# Confirmation dialog
+def confirm_selection(file_name):
+    confirm_message = f"Confirm selection: {file_name}?"
+    wrapped_message = wrap_text(confirm_message, font, width - 40)  # Wrap text to fit screen width
+
+    # Calculate space for the text and the preview
+    prompt_height = height // 4  # Top quarter for prompt text
+    preview_height = height * 2 // 3 - 10  # Bottom 2/3 of the screen for preview (shrunken slightly)
+
+    selected_file_path = os.path.join(directory, file_name)  # Full path to the selected file
+
+    # Load the selected image for preview
+    try:
+        img = pygame.image.load(selected_file_path)
+    except pygame.error:
+        logging.debug(f"ERROR: Failed to load image: {selected_file_path}")
+        img = None
+
+    while True:
+        screen.fill(BLACK)
+
+        # Render prompt text in the top quarter of the screen
+        for i, line in enumerate(wrapped_message):
+            message_text = font.render(line, True, WHITE)
+            screen.blit(message_text, (width // 2 - message_text.get_width() // 2, prompt_height // 2 - 50 + i * 30))
+
+        # Render "Press A to confirm, B to cancel" closer to the previous text
+        yes_text = font.render("Press A to confirm, B to cancel", True, HIGHLIGHT_COLOR)
+        screen.blit(yes_text, (width // 2 - yes_text.get_width() // 2, prompt_height // 2 + i * 30 + 20))  # Move this line closer
+
+        # Draw the preview image in the bottom two-thirds of the screen with a border
+        if img:
+            aspect_ratio = img.get_width() / img.get_height()
+            preview_width = min(width * 2 // 3, int(preview_height * aspect_ratio))
+            preview_height = int(preview_width / aspect_ratio)
+            img_scaled = pygame.transform.scale(img, (preview_width, preview_height))
+
+            preview_x = width // 2 - preview_width // 2
+            preview_y = height - preview_height - 10  # 10px padding from the bottom
+            pygame.draw.rect(screen, UNSELECTED_COLOR, (preview_x - 3, preview_y - 3, preview_width + 6, preview_height + 6), 3)
+            screen.blit(img_scaled, (preview_x, preview_y))
+
+        pygame.display.flip()
+
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                if LOG_LEVEL > 0: logging.debug(f"Quitting from selection")
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if LOG_LEVEL > 1: logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
+                if event.key == pygame.K_a:  # Confirm
+                    if LOG_LEVEL > 0: logging.debug(f"Confirmed Selection")
+                    return True
+                elif event.key == pygame.K_b:  # Cancel
+                    if LOG_LEVEL > 0: logging.debug(f"Selection Canceled")
+                    return False
+
+# Exit confirmation dialog
+def confirm_exit():
+    exit_message = "Are you sure you want to exit?"
+    wrapped_message = wrap_text(exit_message, font, width - 40)  # Wrap text to fit screen width
+    while True:
+        screen.fill(BLACK)
+        for i, line in enumerate(wrapped_message):
+            message_text = font.render(line, True, WHITE)
+            screen.blit(message_text, (width // 2 - message_text.get_width() // 2, height // 2 - 50 + i * 30))
+
+        yes_text = font.render("Press A to confirm, B to cancel", True, HIGHLIGHT_COLOR)
+        screen.blit(yes_text, (width // 2 - yes_text.get_width() // 2, height // 2 + 50))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                if LOG_LEVEL > 0: logging.debug(f"Quitting without confirmation")
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if LOG_LEVEL > 1: logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
+                if event.key == pygame.K_a:  # Confirm exit
+                    if LOG_LEVEL > 0: logging.debug(f"Confirmed Exit")
+                    pygame.quit()
+                    sys.exit()
+                elif event.key == pygame.K_b:  # Cancel exit
+                    if LOG_LEVEL > 0: logging.debug(f"Exit Canceled")
+                    return
+
+# Confirmation dialog for reboot
+def confirm_reboot():
+    reboot_message = "Do you want to reboot the device?"
+    wrapped_message = wrap_text(reboot_message, font, width - 40)  # Wrap text to fit screen width
+    while True:
+        screen.fill(BLACK)
+        for i, line in enumerate(wrapped_message):
+            message_text = font.render(line, True, WHITE)
+            screen.blit(message_text, (width // 2 - message_text.get_width() // 2, height // 2 - 50 + i * 30))
+
+        yes_text = font.render("Press A to confirm, B to cancel", True, HIGHLIGHT_COLOR)
+        screen.blit(yes_text, (width // 2 - yes_text.get_width() // 2, height // 2 + 50))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if LOG_LEVEL > 1: logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
+                if event.key == pygame.K_a:  # Confirm reboot
+                    if LOG_LEVEL > 0: logging.debug(f"Confirmed Reboot")
+                    subprocess.run(['reboot'])
+                elif event.key == pygame.K_b:  # Cancel reboot
+                    if LOG_LEVEL > 0: logging.debug(f"Reboot Canceled")
+                    return
+
+def execute_commands(file_path, board_type):
+    temp_file_path = '/tmp/templogo.bmp'
+    try:
+        # Copy the selected bootlogo
+        if LOG_LEVEL > 0: logging.debug(f"Copy {file_path} to {temp_file_path}")
+        subprocess.run(['cp', file_path, temp_file_path], check=True)
+
+        # Rotate image if the board type is rg28xx
+        if board_type == "rg28xx":
+            if LOG_LEVEL > 0: logging.debug(f"Board is {board_type}. Rotate {temp_file_path}")
+            rotate_image(temp_file_path)
+
+        # Set boot partition to RW
+        if LOG_LEVEL > 0: logging.debug(f"Ensure boot partition is writable")
+        subprocess.run(['bash', '-c', '[[ ! -w /boot/bootlogo.bmp ]] && batocera-es-swissknife --remount'])
+
+        # Move new bootlogo to boot partition
+        if LOG_LEVEL > 0: logging.debug(f"Move {temp_file_path} to /boot/bootlogo.bmp")
+        subprocess.run(['mv', temp_file_path, '/boot/bootlogo.bmp'], check=True)
+        #os.replace(temp_file_path, '/boot/bootlogo.bmp')
+
+        # Remount again
+        if LOG_LEVEL > 0: logging.debug(f"Set boot partition to read only")
+        subprocess.run(['batocera-es-swissknife', '--remount'], check=True)
+    except subprocess.CalledProcessError as e:
+        logging.debug(f"ERROR: Command failed: {e}")
+
+def main(directory):
+    files = list_files(directory)
+    selected_index = 0
+    start_index = 0
+    files_per_page = (height - 120) // 40  # Adjusted for 20px extra space
+
+    current_bootlogo_path = '/boot/bootlogo.bmp'
+
+
+    # Detect board type at the beginning
+    board_type = detect_board()
+    if LOG_LEVEL > 0: logging.debug(f"Detected board type: {board_type}")
+
+
+    # If the board is rg28xx, prepare the un-rotated bootlogo for preview
+    if board_type == "rg28xx":
+        prepare_unrotated_bootlogo('/tmp/current-bootlogo.bmp')
+        current_bootlogo_path = '/tmp/current-bootlogo.bmp'
+
+    while True:
+        screen.fill(BLACK)  # Black background
+
+        # Display instruction
+        instruction_text = instruction_font.render("Select desired Boot Logo and press A", True, HIGHLIGHT_COLOR)
+        screen.blit(instruction_text, (20, 10))
+
+        # Render file list (with scrolling if necessary)
+        for i in range(files_per_page):
+            file_index = start_index + i
+            if file_index >= len(files):
+                break
+            file = files[file_index]
+            color = WHITE if file_index == selected_index else UNSELECTED_COLOR
+            text = font.render(file, True, color)
+            screen.blit(text, (20, 60 + i * 40))  # Moved list down by 20px
+
+        # Display thumbnail of the selected .bmp file
+        selected_file_path = os.path.join(directory, files[selected_index] + '.bmp')  # Add .bmp back for loading
+        current_img = None
+
+        # Check if the "Y" key is held down
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_y]:
+            # Load current boot logo
+            try:
+                current_img = pygame.image.load(current_bootlogo_path)
+            except pygame.error:
+                logging.debug(f"ERROR: Failed to load current boot logo: {current_bootlogo_path}")
+        else:
+            # Load the selected file
+            try:
+                img = pygame.image.load(selected_file_path)
+            except pygame.error:
+                logging.debug(f"ERROR: Failed to load image: {selected_file_path}")
+
+        # Draw the thumbnail with a border
+        if current_img is not None:
+            img = pygame.transform.scale(current_img, (194, 194))
+            pygame.draw.rect(screen, UNSELECTED_COLOR, (width - 200, height - 200, 200, 200), 3)  # Grey border
+            screen.blit(img, (width - 197, height - 197))  # Adjusted position to fit inside border
+        elif 'img' in locals():
+            img = pygame.transform.scale(img, (194, 194))
+            pygame.draw.rect(screen, UNSELECTED_COLOR, (width - 200, height - 200, 200, 200), 3)  # Grey border
+            screen.blit(img, (width - 197, height - 197))  # Adjusted position to fit inside border
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                confirm_exit()
+            elif event.type == pygame.KEYDOWN:
+                if LOG_LEVEL > 1: logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
+                if event.key == pygame.K_UP:
+                    selected_index = max(selected_index - 1, 0)
+                    if selected_index < start_index:
+                        start_index = selected_index
+                elif event.key == pygame.K_DOWN:
+                    selected_index = min(selected_index + 1, len(files) - 1)
+                    if selected_index >= start_index + files_per_page:
+                        start_index = selected_index - files_per_page + 1
+                elif event.key == pygame.K_a:  # Use "A" to select a file
+                    selected_file_path = os.path.join(directory, files[selected_index] + '.bmp')
+                    if LOG_LEVEL > 0: logging.debug(f"Confirm Selection of {selected_file_path}")
+                    confirm = confirm_selection(files[selected_index] + '.bmp')
+                    if confirm:
+                        execute_commands(os.path.join(directory, files[selected_index] + '.bmp'), board_type)
+                        confirm_reboot()
+                elif event.key == pygame.K_b:  # Use "B" to exit
+                    confirm_exit()
+                elif event.key == pygame.K_x:  # Use "X" to exit
+                    confirm_reboot()
+
+if __name__ == "__main__":
+    directory = get_directory()
+    if directory:
+        if LOG_LEVEL > 0: logging.debug(f"Starting")
+        main(directory)
+    else:
+        if LOG_LEVEL > 0: logging.debug(f"Quitting: No valid directory found.")
+        logging.error("No valid directory found.")
+        pygame.quit()
+        sys.exit()
