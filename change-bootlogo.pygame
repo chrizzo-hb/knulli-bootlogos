@@ -4,7 +4,7 @@ import sys
 import subprocess
 import logging
 
-LOG_LEVEL = 1 # 
+LOG_LEVEL = 1 # LOG LEVEL is Global and can contain and integer. 0 = No logging only errors. 1 = Basic Loggin, 2 = LOg every key press
 
 # Initialize logging
 logging.basicConfig(filename='/userdata/system/logs/change-bootlogo.log',

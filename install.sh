@@ -1,7 +1,8 @@
 #!/bin/bash
 
 download_data="
-https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/change-bootlogo.sh /opt/change-bootlogo.sh true
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/Change-Bootlogo.pygame /userdata/roms/pygame/change-bootlogo/Change-Bootlogo.pygame true
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/change-bootlogo.sh /opt/change-bootlogo true
 https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/info.txt /userdata/roms/pygame/change-bootlogo/bootlogo/info.txt false
 https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/bootlogo_original.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/bootlogo_original.bmp false
 https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli_greyscale_v2.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/powered_by_knulli_greyscale_v2.bmp false

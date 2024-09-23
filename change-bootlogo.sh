@@ -54,7 +54,7 @@ select_file_dialog() {
 
     # Check if the provided argument is a valid directory
     if [ ! -d "$DIRECTORY" ]; then
-        echo >&2 "Error: $DIRECTORY is not a valid directory."
+        echo >&2 "ERROR: $DIRECTORY is not a valid directory."
         exit 1
     else
         # Create a file list with numbered items for the dialog
