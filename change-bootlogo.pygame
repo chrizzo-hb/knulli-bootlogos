@@ -4,11 +4,11 @@ import sys
 import subprocess
 import logging
 
-LOG_LEVEL = 1 # LOG LEVEL is Global and can contain and integer. 0 = No logging only errors. 1 = Basic Loggin, 2 = LOg every key press
+LOG_LEVEL = logging.INFO
 
 # Initialize logging
 logging.basicConfig(filename='/userdata/system/logs/change-bootlogo.log',
-                    level=logging.DEBUG,
+                    level=LOG_LEVEL,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Initialize Pygame
@@ -56,7 +56,7 @@ def rotate_image(file_path):
         os.replace(rotated_file, file_path)
         #subprocess.run(['mv', rotated_file, file_path], check=True)
 
-        if LOG_LEVEL > 0: logging.debug(f"Image rotated and saved: {file_path}")
+        logging.debug(f"Image rotated and saved: {file_path}")
     except subprocess.CalledProcessError as e:
         logging.debug(f"ERROR: Failed to rotate image: {e}")
 
@@ -67,7 +67,7 @@ def prepare_unrotated_bootlogo(current_bootlogo_path):
         # Make an un-rotated copy in /tmp
         subprocess.run(['ffmpeg', '-y', '-v', '0', '-i', bootlogo_path,
                         '-vf', 'rotate=-PI*1.5:ow=ih:oh=iw', current_bootlogo_path], check=True)
-        if LOG_LEVEL > 0: logging.debug(f"Un-rotated bootlogo prepared in {current_bootlogo_path}")
+        logging.debug(f"Un-rotated bootlogo prepared in {current_bootlogo_path}")
     except subprocess.CalledProcessError as e:
         logging.debug(f"ERROR: Failed to prepare un-rotated bootlogo: {e}")
 
@@ -147,16 +147,16 @@ def confirm_selection(file_name):
         # Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                if LOG_LEVEL > 0: logging.debug(f"Quitting from selection")
+                logging.info(f"Quitting from selection")
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if LOG_LEVEL > 1: logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
+                logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
                 if event.key == pygame.K_a:  # Confirm
-                    if LOG_LEVEL > 0: logging.debug(f"Confirmed Selection")
+                    logging.info(f"Confirmed Selection")
                     return True
                 elif event.key == pygame.K_b:  # Cancel
-                    if LOG_LEVEL > 0: logging.debug(f"Selection Canceled")
+                    logging.info(f"Selection Canceled")
                     return False
 
 # Exit confirmation dialog
@@ -176,17 +176,17 @@ def confirm_exit():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                if LOG_LEVEL > 0: logging.debug(f"Quitting without confirmation")
+                logging.info(f"Quitting without confirmation")
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if LOG_LEVEL > 1: logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
+                logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
                 if event.key == pygame.K_a:  # Confirm exit
-                    if LOG_LEVEL > 0: logging.debug(f"Confirmed Exit")
+                    logging.info(f"Confirmed Exit")
                     pygame.quit()
                     sys.exit()
                 elif event.key == pygame.K_b:  # Cancel exit
-                    if LOG_LEVEL > 0: logging.debug(f"Exit Canceled")
+                    logging.debug(f"Exit Canceled")
                     return
 
 # Confirmation dialog for reboot
@@ -209,37 +209,37 @@ def confirm_reboot():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if LOG_LEVEL > 1: logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
+                logging.info(f"Key pressed: {pygame.key.name(event.key)}")
                 if event.key == pygame.K_a:  # Confirm reboot
-                    if LOG_LEVEL > 0: logging.debug(f"Confirmed Reboot")
+                    logging.debug(f"Confirmed Reboot")
                     subprocess.run(['reboot'])
                 elif event.key == pygame.K_b:  # Cancel reboot
-                    if LOG_LEVEL > 0: logging.debug(f"Reboot Canceled")
+                    logging.debug(f"Reboot Canceled")
                     return
 
 def execute_commands(file_path, board_type):
     temp_file_path = '/tmp/templogo.bmp'
     try:
         # Copy the selected bootlogo
-        if LOG_LEVEL > 0: logging.debug(f"Copy {file_path} to {temp_file_path}")
+        logging.debug(f"Copy {file_path} to {temp_file_path}")
         subprocess.run(['cp', file_path, temp_file_path], check=True)
 
         # Rotate image if the board type is rg28xx
         if board_type == "rg28xx":
-            if LOG_LEVEL > 0: logging.debug(f"Board is {board_type}. Rotate {temp_file_path}")
+            logging.debug(f"Board is {board_type}. Rotate {temp_file_path}")
             rotate_image(temp_file_path)
 
         # Set boot partition to RW
-        if LOG_LEVEL > 0: logging.debug(f"Ensure boot partition is writable")
+        logging.debug(f"Ensure boot partition is writable")
         subprocess.run(['bash', '-c', '[[ ! -w /boot/bootlogo.bmp ]] && batocera-es-swissknife --remount'])
 
         # Move new bootlogo to boot partition
-        if LOG_LEVEL > 0: logging.debug(f"Move {temp_file_path} to /boot/bootlogo.bmp")
+        logging.debug(f"Move {temp_file_path} to /boot/bootlogo.bmp")
         subprocess.run(['mv', temp_file_path, '/boot/bootlogo.bmp'], check=True)
         #os.replace(temp_file_path, '/boot/bootlogo.bmp')
 
         # Remount again
-        if LOG_LEVEL > 0: logging.debug(f"Set boot partition to read only")
+        logging.debug(f"Set boot partition to read only")
         subprocess.run(['batocera-es-swissknife', '--remount'], check=True)
     except subprocess.CalledProcessError as e:
         logging.debug(f"ERROR: Command failed: {e}")
@@ -255,7 +255,7 @@ def main(directory):
 
     # Detect board type at the beginning
     board_type = detect_board()
-    if LOG_LEVEL > 0: logging.debug(f"Detected board type: {board_type}")
+    logging.debug(f"Detected board type: {board_type}")
 
 
     # If the board is rg28xx, prepare the un-rotated bootlogo for preview
@@ -315,7 +315,7 @@ def main(directory):
             if event.type == pygame.QUIT:
                 confirm_exit()
             elif event.type == pygame.KEYDOWN:
-                if LOG_LEVEL > 1: logging.debug(f"Key pressed: {pygame.key.name(event.key)}")
+                logging.info(f"Key pressed: {pygame.key.name(event.key)}")
                 if event.key == pygame.K_UP:
                     selected_index = max(selected_index - 1, 0)
                     if selected_index < start_index:
@@ -326,7 +326,7 @@ def main(directory):
                         start_index = selected_index - files_per_page + 1
                 elif event.key == pygame.K_a:  # Use "A" to select a file
                     selected_file_path = os.path.join(directory, files[selected_index] + '.bmp')
-                    if LOG_LEVEL > 0: logging.debug(f"Confirm Selection of {selected_file_path}")
+                    logging.debug(f"Confirm Selection of {selected_file_path}")
                     confirm = confirm_selection(files[selected_index] + '.bmp')
                     if confirm:
                         execute_commands(os.path.join(directory, files[selected_index] + '.bmp'), board_type)
@@ -339,10 +339,10 @@ def main(directory):
 if __name__ == "__main__":
     directory = get_directory()
     if directory:
-        if LOG_LEVEL > 0: logging.debug(f"Starting")
+        logging.debug(f"Starting")
         main(directory)
     else:
-        if LOG_LEVEL > 0: logging.debug(f"Quitting: No valid directory found.")
+        logging.debug(f"Quitting: No valid directory found.")
         logging.error("No valid directory found.")
         pygame.quit()
         sys.exit()
