@@ -11,6 +11,7 @@ https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bo
 https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/powered_by_knulli.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/powered_by_knulli.bmp false
 https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/rg35xx-h_anbernic.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/rg35xx-h_anbernic.bmp false
 https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/rg35xx-h_device.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/rg35xx-h_device.bmp false
+https://raw.githubusercontent.com/zarquon-42/knulli-bootlogos/refs/heads/main/bootlogo/batocera_original.bmp /userdata/roms/pygame/change-bootlogo/bootlogo/batocera_original.bmp false
 "
 download_files() {
     echo "$1" | while IFS=" " read -r uri target_file executable; do
